@@ -22,13 +22,13 @@ import asyncio
 import paho.mqtt.client as mqtt
 from time import gmtime, strftime
 from bleak import BleakScanner
-#from thermo_sample import ThermoSample
+
 
 SENSORS = {"6f:15:00:00:00:42": "livingroom" ,"6f:15:00:00:0c:b1" : "bedroom"}
-MQTT_BROKER_URL = "localhost"
 MQTT_TOPICS = [("livingroom_temp",0),("bedroom_temp",0),("livingroom_hum",0),("bedroom_hum",0)]
+MQTT_BROKER_URL = "localhost"
 SAMPLE_INTERVAL = 30
-DISCOVERY_TIME = 4
+DISCOVERY_TIME  =  5
 
 class ThermoSample:
   def __init__(self, mac, location, 
@@ -43,7 +43,7 @@ class ThermoSample:
      
   def __str__(self):
     return ("========>{0},{1}<========\n"
-      "temperature:\t{2:.2f}°C\nhumidity:\t{3:.2f}%\n".
+      "temperature:\t{2:.2f}°C\nhumidity:\t{3:.2f}%".
       format(self.location, self.mac, self.temperature, self.humidity))    
   
 
@@ -101,12 +101,19 @@ def detection_callback(device, advertisement_data):
 
 def publish():
     anychange = False
-    for i in range(len(samples)):
-        if len(prev_samples) < 2 or \
-            samples[i].temperature != prev_samples[i].temperature or \
-            samples[i].humidity != prev_samples[i].humidity:
-            anychange = True
-            
+    if len(prev_samples) < 2:
+        anychange = True
+    else:
+        for i in range(len(samples)): # todo: match order of samples!!!!
+            compare = None            
+            for j in range(len(prev_samples)):
+              if samples[i].mac == prev_samples[j].mac:
+                  compare = prev_samples[j]
+                  break
+            if compare is not None and samples[i].temperature != compare.temperature:
+                anychange = True
+                break
+                
     if anychange is True:
         prev_samples.clear()    
         print('connecting to broker and publishing...', end='')
@@ -124,7 +131,8 @@ def publish():
                   
 def signal_handler(signal, frame):
   print('disconnecting from broker...')
-  mqttc.disconnect()
+  if mqttc.is_connected:
+    mqttc.disconnect()
   print('stopping scanner...')
   scanner.stop()
   sys.exit(0)

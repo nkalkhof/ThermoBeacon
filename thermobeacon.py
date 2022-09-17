@@ -1,34 +1,42 @@
 #!/usr/bin/env python3
-"""
-/***************************************************************************
- *
- * 
- *
- * -------------------------------------------------------------------------
- * 
+'''***************************************************************************
+ * @see: https://novelbits.io/bluetooth-low-energy-advertisements-part-1/
  * -------------------------------------------------------------------------
  * begin                : Sept 01 2022
  * last changes         : Sept 03 2022
  * copyright            : (C) 2022 by N.Kalkhof
  * email                : info@kalkhof-it-solutions.de
- ***************************************************************************/
-"""
-# @see: https://novelbits.io/bluetooth-low-energy-advertisements-part-1/
+ **************************************************************************'''
 import signal
-import sys
 import time
 import math
 import asyncio
-import paho.mqtt.client as mqtt
-from time import gmtime, strftime
+import sys
+import time
+import logging
 from bleak import BleakScanner
+from influxdb_client import InfluxDBClient, Point
 
+# InfluxDB config and instance
+INFLUX_ORG    = "Hasisbuffen"
+INFLUX_BUCKET = "thermobeacon"
+INFLUX_URL    = "http://127.0.0.1:8086"
+INFLUG_TOKEN  = "5opyNFxEud0drGuzK0Pu9iH-a6fvkLlS5uDyZ4C8NBriKA1rNYMOS8Wmkx5qXzlLzTk9Jo2BEs49rxx77GyyYg=="
+influx_client = InfluxDBClient(url=INFLUX_URL, token=INFLUG_TOKEN, org=INFLUX_ORG)
+influx_write_api = influx_client.write_api()            
 
 SENSORS = {"6f:15:00:00:00:42": "livingroom" ,"6f:15:00:00:0c:b1" : "bedroom"}
-MQTT_TOPICS = [("livingroom_temp",0),("bedroom_temp",0),("livingroom_hum",0),("bedroom_hum",0)]
-MQTT_BROKER_URL = "localhost"
 SAMPLE_INTERVAL = 30
 DISCOVERY_TIME  =  5
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler("/tmp/thermobeacon.log"),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
 
 class ThermoSample:
   def __init__(self, mac, location, 
@@ -42,13 +50,10 @@ class ThermoSample:
     self.humidity    = humidity
      
   def __str__(self):
-    return ("========>{0},{1}<========\n"
+    return ("\n========>{0},{1}<========\n"
       "temperature:\t{2:.2f}°C\nhumidity:\t{3:.2f}%".
       format(self.location, self.mac, self.temperature, self.humidity))    
-  
 
-scanner = BleakScanner()    
-mqttc = mqtt.Client()
 samples : ThermoSample = []
 prev_samples : ThermoSample = []
 
@@ -116,26 +121,30 @@ def publish():
                 
     if anychange is True:
         prev_samples.clear()    
-        print('connecting to broker and publishing...', end='')
-        mqttc.connect(MQTT_BROKER_URL, port=1883, keepalive=60, bind_address="")
-        mqttc.subscribe(MQTT_TOPICS)
-        for i in range(len(samples)):
-            mqttc.publish("{}_temp".format(samples[i].location), f"{samples[i].temperature:.2f}")
-            mqttc.publish("{}_hum".format(samples[i].location), f"{samples[i].humidity:.2f}")
-            prev_samples.append(samples[i])            
-        mqttc.disconnect()
-        print('done')
+        logging.info('publishing to bucket {0}...'.format(INFLUX_BUCKET))
+        for i in range(len(samples)):            
+            try:
+                point = Point("temperature").field("{}_temp".
+                        format(samples[i].location), samples[i].temperature)                
+                influx_write_api.write(bucket=INFLUX_BUCKET, record=point)
+                point = Point("temperature").field("{}_hum".
+                        format(samples[i].location), samples[i].humidity)
+                influx_write_api.write(bucket=INFLUX_BUCKET, record=point)
+                prev_samples.append(samples[i])            
+            except Exception as e:
+                logging.warning("publishing failed with {0}!".format(str(e)))                    
     else:
-        print("no changes in samples compare to previous, omitting publish")                    
+        logging.info("no changes in samples compare to previous, omitting publish")                    
             
+            
+scanner = BleakScanner()         
                   
 def signal_handler(signal, frame):
-  print('disconnecting from broker...')
-  if mqttc.is_connected:
-    mqttc.disconnect()
-  print('stopping scanner...')
+  logging.info('stopping scanner...')
   scanner.stop()
-  sys.exit(0)
+  logging.info('closing database connection...')
+  influx_client.close()
+  exit(1)
 
 async def main():
     signal.signal(signal.SIGINT, signal_handler)
@@ -143,22 +152,22 @@ async def main():
     signal.signal(signal.SIGQUIT, signal_handler)
     
     scanner.register_detection_callback(detection_callback)    
-    print('starting discovery...')   
+    logging.info('starting discovery...')   
     await scanner.discover()    
     while(True):
         starting_time = time.time()       
         samples.clear()
-        print('starting scan @', strftime("%Y-%m-%d %H:%M:%S", gmtime()), '...')
+        logging.info('starting scan...')
         await scanner.start()
         await asyncio.sleep(DISCOVERY_TIME)
         await scanner.stop()
-        print('scan completed')
+        logging.info('scan completed')
         for i in range(len(samples)):
-            print(samples[i])             
+            logging.info(str(samples[i]))
         publish()            
         time_delta = SAMPLE_INTERVAL - (time.time() - starting_time)
         if time_delta > 0:
-            print('sleeping for {0:2.1f} seconds...'.format(time_delta))
+            logging.info('sleeping for {0:2.1f} seconds...'.format(time_delta))
             await asyncio.sleep(time_delta)
             
 asyncio.run(main())

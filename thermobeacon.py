@@ -14,13 +14,14 @@ import asyncio
 import sys
 import time
 import logging
+from logging.handlers import TimedRotatingFileHandler
 from bleak import BleakScanner
 from influxdb_client import InfluxDBClient, Point
 
 # InfluxDB config and instance
 INFLUX_ORG    = "Hasisbuffen"
 INFLUX_BUCKET = "thermobeacon"
-INFLUX_URL    = "http://127.0.0.1:8086"
+INFLUX_URL    = "http://127.0.0.1:8087"
 INFLUG_TOKEN  = "5opyNFxEud0drGuzK0Pu9iH-a6fvkLlS5uDyZ4C8NBriKA1rNYMOS8Wmkx5qXzlLzTk9Jo2BEs49rxx77GyyYg=="
 influx_client = InfluxDBClient(url=INFLUX_URL, token=INFLUG_TOKEN, org=INFLUX_ORG)
 influx_write_api = influx_client.write_api()            
@@ -29,14 +30,15 @@ SENSORS = {"6f:15:00:00:00:42": "livingroom" ,"6f:15:00:00:0c:b1" : "bedroom"}
 SAMPLE_INTERVAL = 30
 DISCOVERY_TIME  =  5
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler("/tmp/thermobeacon.log"),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
+def setupLogging():
+    formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
+    handler = TimedRotatingFileHandler("/tmp/thermobeacon.log", 
+            when = 'h', interval = 24, backupCount = 30)
+    handler.setFormatter(formatter)
+    logger = logging.getLogger()
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+    #logging.StreamHandler(sys.stdout)
 
 class ThermoSample:
   def __init__(self, mac, location, 
@@ -144,13 +146,16 @@ def signal_handler(signal, frame):
   scanner.stop()
   logging.info('closing database connection...')
   influx_client.close()
+  logging.shutdown()
   exit(1)
 
 async def main():
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGHUP, signal_handler)
     signal.signal(signal.SIGQUIT, signal_handler)
-    
+
+    setupLogging()        
+        
     scanner.register_detection_callback(detection_callback)    
     logging.info('starting discovery...')   
     await scanner.discover()    
@@ -162,9 +167,10 @@ async def main():
         await asyncio.sleep(DISCOVERY_TIME)
         await scanner.stop()
         logging.info('scan completed')
-        for i in range(len(samples)):
-            logging.info(str(samples[i]))
-        publish()            
+        if(len(samples) > 0):
+            for i in range(len(samples)):
+                logging.info(str(samples[i]))
+            publish()            
         time_delta = SAMPLE_INTERVAL - (time.time() - starting_time)
         if time_delta > 0:
             logging.info('sleeping for {0:2.1f} seconds...'.format(time_delta))

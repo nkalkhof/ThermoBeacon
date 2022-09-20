@@ -21,7 +21,7 @@ from influxdb_client import InfluxDBClient, Point
 # InfluxDB config and instance
 INFLUX_ORG    = "Hasisbuffen"
 INFLUX_BUCKET = "thermobeacon"
-INFLUX_URL    = "http://127.0.0.1:8087"
+INFLUX_URL    = "http://127.0.0.1:8086"
 INFLUG_TOKEN  = "5opyNFxEud0drGuzK0Pu9iH-a6fvkLlS5uDyZ4C8NBriKA1rNYMOS8Wmkx5qXzlLzTk9Jo2BEs49rxx77GyyYg=="
 influx_client = InfluxDBClient(url=INFLUX_URL, token=INFLUG_TOKEN, org=INFLUX_ORG)
 influx_write_api = influx_client.write_api()            

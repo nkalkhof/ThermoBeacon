@@ -11,7 +11,6 @@ import signal
 import time
 import math
 import asyncio
-import sys
 import time
 import logging
 from logging.handlers import TimedRotatingFileHandler
@@ -26,7 +25,11 @@ INFLUG_TOKEN  = "5opyNFxEud0drGuzK0Pu9iH-a6fvkLlS5uDyZ4C8NBriKA1rNYMOS8Wmkx5qXzl
 influx_client = InfluxDBClient(url=INFLUX_URL, token=INFLUG_TOKEN, org=INFLUX_ORG)
 influx_write_api = influx_client.write_api()            
 
-SENSORS = {"6f:15:00:00:00:42": "livingroom" ,"6f:15:00:00:0c:b1" : "bedroom"}
+SENSORS = {"6f:15:00:00:00:42" : "livingroom",
+           "6f:15:00:00:0c:b1" : "bedroom",
+           "8e:72:00:00:03:25" : "bathroom",
+           "8e:d6:00:00:06:ca" : "outside",
+           "23:1b:00:00:04:76" : "fridge"}
 SAMPLE_INTERVAL = 30
 DISCOVERY_TIME  =  5
 
@@ -139,7 +142,7 @@ def publish():
         logging.info("no changes in samples compare to previous, omitting publish")                    
             
             
-scanner = BleakScanner()         
+scanner = BleakScanner(detection_callback)
                   
 def signal_handler(signal, frame):
   logging.info('stopping scanner...')
@@ -156,7 +159,7 @@ async def main():
 
     setupLogging()        
         
-    scanner.register_detection_callback(detection_callback)    
+#scanner.register_detection_callback(detection_callback)    
     logging.info('starting discovery...')   
     await scanner.discover()    
     while(True):

@@ -29,7 +29,8 @@ SENSORS = {"6f:15:00:00:00:42" : "livingroom",
            "6f:15:00:00:0c:b1" : "bedroom",
            "8e:72:00:00:03:25" : "bathroom",
            "8e:d6:00:00:06:ca" : "outside",
-           "23:1b:00:00:04:76" : "fridge"}
+           "23:1b:00:00:04:76" : "fridge",
+           "fd:38:00:00:16:f4" : "greenhouse"}
 SAMPLE_INTERVAL = 30
 DISCOVERY_TIME  =  5
 
@@ -159,7 +160,6 @@ async def main():
 
     setupLogging()        
         
-#scanner.register_detection_callback(detection_callback)    
     logging.info('starting discovery...')   
     await scanner.discover()    
     while(True):

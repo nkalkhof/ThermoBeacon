@@ -3,8 +3,8 @@
  * @see: https://novelbits.io/bluetooth-low-energy-advertisements-part-1/
  * -------------------------------------------------------------------------
  * begin                : Sept 01 2022
- * last changes         : Sept 03 2022
- * copyright            : (C) 2022 by N.Kalkhof
+ * last changes         : Sept 29 2023
+ * copyright            : (C) 2022,2023 by N.Kalkhof
  * email                : info@kalkhof-it-solutions.de
  **************************************************************************'''
 import signal
@@ -13,36 +13,58 @@ import math
 import asyncio
 import time
 import logging
+import argparse
 from logging.handlers import TimedRotatingFileHandler
 from bleak import BleakScanner
 from influxdb_client import InfluxDBClient, Point
 
-# InfluxDB config and instance
-INFLUX_ORG    = "Hasisbuffen"
-INFLUX_BUCKET = "thermobeacon"
-INFLUX_URL    = "http://127.0.0.1:8086"
-INFLUG_TOKEN  = "5opyNFxEud0drGuzK0Pu9iH-a6fvkLlS5uDyZ4C8NBriKA1rNYMOS8Wmkx5qXzlLzTk9Jo2BEs49rxx77GyyYg=="
-influx_client = InfluxDBClient(url=INFLUX_URL, token=INFLUG_TOKEN, org=INFLUX_ORG)
-influx_write_api = influx_client.write_api()            
-
-SENSORS = {"6f:15:00:00:00:42" : "livingroom",
-           "6f:15:00:00:0c:b1" : "bedroom",
-           "8e:72:00:00:03:25" : "bathroom",
-           "8e:d6:00:00:06:ca" : "outside",
-           "23:1b:00:00:04:76" : "fridge",
-           "fd:38:00:00:16:f4" : "greenhouse"}
 SAMPLE_INTERVAL = 30
 DISCOVERY_TIME  =  5
 
+# TODO: Td = T - ((100 - RH)/5.)
+
+# assemble arguments
+parser = argparse.ArgumentParser()
+parser.add_argument("-u", "--influxurl",
+                    help="influxdb url",
+                    type=str, required=True)
+parser.add_argument("-b", "--influxbucket",
+                    help="influxdb bucket",
+                    type=str, required=True)
+parser.add_argument("-o", "--influxorg",
+                    help="influxdb org",
+                    type=str, required=True)
+parser.add_argument("-t", "--influxtoken",
+                    help="influxdb token",
+                    type=str, required=True)
+parser.add_argument("-l", "--logout",
+                    help="log output file|console",
+                    type=str, required=False)
+parser.add_argument("-d", "--beacons",
+                    help="beacons mac label",
+                    type=str, required=True)
+
+args = parser.parse_args()
+
+SENSORS = args.beacons.split(',')
+
+influx_client = InfluxDBClient(url=args.influxurl, token=args.influxtoken, org=args.influxorg)
+influx_write_api = influx_client.write_api()            
+
 def setupLogging():
     formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
-    handler = TimedRotatingFileHandler("/tmp/thermobeacon.log", 
-            when = 'h', interval = 24, backupCount = 30)
-    handler.setFormatter(formatter)
+    fileHandler = TimedRotatingFileHandler("/tmp/thermobeacon.log", 
+            when = 'h', interval = 24, backupCount = 7)
+    fileHandler.setFormatter(formatter)
+    consoleHandler = logging.StreamHandler()
+    consoleHandler.setFormatter(formatter)    
     logger = logging.getLogger()
-    logger.addHandler(handler)
+    if args.logout == "file":
+        logger.addHandler(fileHandler)
+    else:
+        logger.addHandler(consoleHandler)    
     logger.setLevel(logging.INFO)
-    #logging.StreamHandler(sys.stdout)
+
 
 class ThermoSample:
   def __init__(self, mac, location, 
@@ -127,15 +149,15 @@ def publish():
                 
     if anychange is True:
         prev_samples.clear()    
-        logging.info('publishing to bucket {0}...'.format(INFLUX_BUCKET))
+        logging.info('publishing to bucket {0}...'.format(args.influxbucket))
         for i in range(len(samples)):            
             try:
                 point = Point("temperature").field("{}_temp".
                         format(samples[i].location), samples[i].temperature)                
-                influx_write_api.write(bucket=INFLUX_BUCKET, record=point)
+                influx_write_api.write(bucket=args.influxbucket, record=point)
                 point = Point("temperature").field("{}_hum".
                         format(samples[i].location), samples[i].humidity)
-                influx_write_api.write(bucket=INFLUX_BUCKET, record=point)
+                influx_write_api.write(bucket=args.influxbucket, record=point)
                 prev_samples.append(samples[i])            
             except Exception as e:
                 logging.warning("publishing failed with {0}!".format(str(e)))                    
@@ -153,7 +175,7 @@ def signal_handler(signal, frame):
   logging.shutdown()
   exit(1)
 
-async def main():
+async def main():    
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGHUP, signal_handler)
     signal.signal(signal.SIGQUIT, signal_handler)

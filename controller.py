@@ -46,7 +46,11 @@ class Controller():
         await asyncio.sleep(self.args.interval)
 
         decoded = self.scanner.getDecoded()
-        
+        if not decoded: # empty dict, device not found, omit!
+            return
+
+        self.logging.debug(f"read(): {len(decoded)} devices found!")
+
         for d in decoded:
           sample: Sample = Sample()
           sample.temperature = d["temperature"]
@@ -66,6 +70,8 @@ class Controller():
 
     ***************************************************************************'''
     async def publish(self):        
+        if len(self.samples) == 0:
+            return
         if self.firstTime == True or self.prevSamples != self.samples:
             await Publisher(self.args, self.logging).doPublish(self.samples)
             self.prevSamples = copy.deepcopy(self.samples)

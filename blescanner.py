@@ -31,8 +31,9 @@ class BLEScanner():
     ***************************************************************************'''
     async def start(self):
         self.decoded.clear() # clear list of dictionaries
-        self.logging.debug(f"scanning for devices...")
+        self.logging.debug(f"BLEScanner(): scanning for devices...")
         devices = await BleakScanner.discover(timeout = self.timeout, return_adv = True)
+        self.logging.debug(f"BLEScanner(): {len(devices.items())} devices found")
         for address, (device, advData) in devices.items():
             mac = device.address.lower()
             # disregard non matching mac addresses

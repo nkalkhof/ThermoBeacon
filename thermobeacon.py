@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 '''***************************************************************************
- * @see: https://novelbits.io/bluetooth-low-energy-advertisements-part-1/
+ * @desc:
  * -------------------------------------------------------------------------
  * begin                : Sept 01 2022
- * last changes         : Sept 29 2023
- * copyright            : (C) 2022,2023 by N.Kalkhof
+ * last changes         : May 20 2026
+ * copyright            : (C) 2022,2026 by N.Kalkhof
  * email                : info@kalkhof-it-solutions.de
  **************************************************************************'''
 import signal
@@ -50,6 +50,9 @@ def signal_handler(signum, frame):
 def exception_handler(type, value, tb):
     logging.info("Uncaught exception: {0}".format(str(value)))
 
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGHUP, signal_handler)
+signal.signal(signal.SIGQUIT, signal_handler)
 
 '''***************************************************************************
 

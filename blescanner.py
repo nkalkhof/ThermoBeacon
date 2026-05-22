@@ -20,38 +20,24 @@ class BLEScanner():
     '''***************************************************************************
 
     ***************************************************************************'''
-    def __init__(self, beacons, logging):
+    def __init__(self, beacons, timeout, logging):
         self.logging = logging
         self.beacons = beacons
-        self.timeout = 5
+        self.timeout = timeout
         self.decoded = [] 
+        self.scanner = BleakScanner(detection_callback = self.__callback)
 
     '''***************************************************************************
 
     ***************************************************************************'''
-    async def start(self):
+    async def scan(self):
         self.decoded.clear() # clear list of dictionaries
         self.logging.debug(f"BLEScanner(): scanning for devices...")
-        devices = await BleakScanner.discover(timeout = self.timeout, return_adv = True)
-        self.logging.debug(f"BLEScanner(): {len(devices.items())} devices found")
-        for address, (device, advData) in devices.items():
-            mac = device.address.lower()
-            # disregard non matching mac addresses
-            if mac not in self.beacons.lower():
-                continue
-            # skip ads already parsed!
-            for d in self.decoded:
-                if d["mac"] == mac:
-                    continue
-            
-            msg = advData.manufacturer_data
-            for key in msg.keys():
-                if len(msg[key]) == 18:
-                    decode: Dict = decodeAdData(mac, key, msg[key])
-                    decode["mac"] = mac
-                    self.decoded.append(decode)
-                    break
-
+        await self.scanner.start()
+        await asyncio.sleep(self.timeout)
+        await self.scanner.stop()
+        self.logging.debug(f"BLEScanner(): {len(self.decoded)} devices found!")
+        
 
     def getDecoded(self):
         return self.decoded
@@ -59,8 +45,7 @@ class BLEScanner():
     '''***************************************************************************
 
     ***************************************************************************'''
-    async def __detection_callback(self, device: BLEDevice, 
-                advData: AdvertisementData):
+    def __callback(self, device: BLEDevice, advData: AdvertisementData):
         mac = device.address.lower()
         # disregard non matching mac addresses
         if mac not in self.beacons.lower():

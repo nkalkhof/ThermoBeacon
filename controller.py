@@ -35,21 +35,19 @@ class Controller():
 
     ***************************************************************************'''
     async def connect(self):
-        self.scanner: BLEScanner = BLEScanner(self.args.beacons, logging = self.logging)
+        self.scanner: BLEScanner = BLEScanner(self.args.beacons, 
+        timeout = self.args.scantimeout, logging = self.logging)
 
 
     '''***************************************************************************
 
     ***************************************************************************'''
-    async def read(self):
-        await self.scanner.start()
-        await asyncio.sleep(self.args.interval)
+    async def scan(self):
+        await self.scanner.scan()
 
         decoded = self.scanner.getDecoded()
         if not decoded: # empty dict, device not found, omit!
             return
-
-        self.logging.debug(f"read(): {len(decoded)} devices found!")
 
         for d in decoded:
           sample: Sample = Sample()
@@ -78,5 +76,5 @@ class Controller():
             self.firstTime == False
         else:
             self.logging.debug(f"publish(): samples identical, omitting publish!")
-        self.samples.clear()            
+        self.samples.clear()
  

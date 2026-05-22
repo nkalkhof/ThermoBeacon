@@ -8,6 +8,7 @@
  * email                : info@kalkhof-it-solutions.de
  **************************************************************************'''
 import signal
+import sys
 import time
 import math
 import asyncio
@@ -60,10 +61,15 @@ signal.signal(signal.SIGQUIT, signal_handler)
 async def main():    
     __setupLogging()             
     controller: Controller = Controller(args = args, logger = logging.getLogger())    
+    await controller.connect()
     while(True):
-        await controller.connect()
-        await controller.read()
+        starttime = time.time()
+        await controller.scan()
         await controller.publish()
+        delta = args.interval - (time.time() - starttime)
+        if delta > 0:
+            logging.debug(f"sleeping for: {delta} seconds...")    
+            await asyncio.sleep(delta)
         
 asyncio.run(main())
 

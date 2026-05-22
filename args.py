@@ -32,7 +32,11 @@ def getArgs():
                         type=str, required=True)
     parser.add_argument("--interval",
                         help="sample interval",
-                        default = 30,
+                        default = 20,
+                        type=int, required=False)
+    parser.add_argument("--scantimeout",
+                        help="BLE scantimeout",
+                        default = 10,
                         type=int, required=False)
     parser.add_argument("--logger",
                         help="log output file|console",

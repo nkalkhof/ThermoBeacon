@@ -15,7 +15,7 @@ from bleak import BleakScanner
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 
-from decode import decodeAdData
+from Thermobeacon.decode import decodeAdData
 
 class BLEScanner():
 
@@ -31,24 +31,24 @@ class BLEScanner():
         self.decoded   = [] 
         self.count     = math.nan
         self.stopEvent = asyncio.Event()        
-        self.scanner   = None
+        self.scanner   = BleakScanner(detection_callback = self.__callback)
 
     '''***************************************************************************
-
+#https://www.google.com/search?q=how+to+use+a+single+bleakscanner+for+multiple+python+programs&udm=50&aep=1&ntc=1&mstk=AUtExfDzS-EYxLdv-fVTQKHhvtCKjfdenDDf7V7i4t-NKOoM8rF5UrDollXcGKxM_hgLs4js2n27HCSGJZNwfxBXW1DXVqE8nGIbeWu61i_Ra_GuIvmyQKBE6i_ddfweTLTsrKA6LNZGvnzxo53NfY1X_a1ZZiYo4mPFGPM&csuir=1
     ***************************************************************************'''
     async def scan(self):
         self.count = 0
         self.decoded.clear() # clear list of dictionaries
         self.logging.debug(f"BLEScanner(): scanning for devices...")
         self.stopEvent.clear() # we need to reset async event here!
-        self.scanner = BleakScanner(detection_callback = self.__callback)
         await self.scanner.start()
+        await asyncio.sleep(self.scantime)
         try:
             await self.stopEvent.wait() # cycle until event is set
         finally:
             await self.scanner.stop()
 
-        await asyncio.sleep(self.scantime)
+        
         self.logging.debug(f"BLEScanner(): {len(self.decoded)} devices found!")
         
 
@@ -61,13 +61,14 @@ class BLEScanner():
     def __callback(self, device: BLEDevice, advData: AdvertisementData):
         self.count += 1
         if self.count > self.MAX_CALLBACKS:
+            #self.logging.debug(f"callback runs wild, forced stop!")
             self.stopEvent.set() # callback invokes chickened out, stop it!
             return
 
         mac = device.address.lower()        
         if mac not in self.beacons.lower():
             return # disregard non matching mac addresses
-            
+
         for d in self.decoded:
             if d["mac"] == mac:
                 return  # skip ads already parsed!

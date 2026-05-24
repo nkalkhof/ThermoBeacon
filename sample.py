@@ -31,5 +31,5 @@ class Sample:
     ***************************************************************************'''
     def __str__(self):             
         return ("\n========> sample data <========\n"
-            "label:\t{0}\nmac:\t{1}\ntemperature:\t{2:3.2f}°C\nhumidity:\t{3:3.2f}%".
+            "label:\t\t{0}\nmac:\t\t{1}\ntemperature:\t{2:3.2f}°C\nhumidity:\t{3:3.2f}%".
             format(self.label, self.btmac, self.temperature, self.humidity))

@@ -9,7 +9,7 @@
  * source               :
  ***************************************************************************'''
 
-from sample import Sample
+from Thermobeacon.sample import Sample
 
 '''***************************************************************************
 ADVERTISING MESSAGES

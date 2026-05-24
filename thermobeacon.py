@@ -16,8 +16,8 @@ import time
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
-from controller import Controller
-from args import getArgs
+from Thermobeacon.controller import Controller
+from Thermobeacon.args import getArgs
 
 args = getArgs()
 

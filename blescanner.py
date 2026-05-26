@@ -34,7 +34,7 @@ class BLEScanner():
         self.scanner   = BleakScanner(detection_callback = self.__callback)
 
     '''***************************************************************************
-#https://www.google.com/search?q=how+to+use+a+single+bleakscanner+for+multiple+python+programs&udm=50&aep=1&ntc=1&mstk=AUtExfDzS-EYxLdv-fVTQKHhvtCKjfdenDDf7V7i4t-NKOoM8rF5UrDollXcGKxM_hgLs4js2n27HCSGJZNwfxBXW1DXVqE8nGIbeWu61i_Ra_GuIvmyQKBE6i_ddfweTLTsrKA6LNZGvnzxo53NfY1X_a1ZZiYo4mPFGPM&csuir=1
+
     ***************************************************************************'''
     async def scan(self):
         self.count = 0

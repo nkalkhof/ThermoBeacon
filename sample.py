@@ -33,3 +33,10 @@ class Sample:
         return ("\n========> sample data <========\n"
             "label:\t\t{0}\nmac:\t\t{1}\ntemperature:\t{2:3.2f}°C\nhumidity:\t{3:3.2f}%".
             format(self.label, self.btmac, self.temperature, self.humidity))
+
+
+'''***************************************************************************
+
+***************************************************************************'''
+def compareSamples(samles, prevsamples) -> bool:
+    return True

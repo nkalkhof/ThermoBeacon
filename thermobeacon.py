@@ -16,15 +16,17 @@ import time
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
-from Thermobeacon.controller import Controller
 from Thermobeacon.args import getArgs
+from Thermobeacon.controller import Controller
 
-args = getArgs()
+from args import getArgs
+
+args = getArgs()     
 
 '''***************************************************************************
 
 ***************************************************************************'''
-def __setupLogging():
+def __setupLogging(args):
     formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
     fileHandler = TimedRotatingFileHandler(args.logpath, 
             when = 'h', interval = 24, backupCount = 7)
@@ -59,7 +61,7 @@ signal.signal(signal.SIGQUIT, signal_handler)
 
 ***************************************************************************'''
 async def main():    
-    __setupLogging()             
+    __setupLogging(args)             
     controller: Controller = Controller(args = args, logger = logging.getLogger())    
     await controller.connect()
     while(True):
@@ -71,5 +73,6 @@ async def main():
             logging.debug(f"sleeping for: {delta} seconds...")    
             await asyncio.sleep(delta)
         
-asyncio.run(main())
+if __name__ == "__main__":        
+    asyncio.run(main())
 

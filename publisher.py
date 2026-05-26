@@ -12,7 +12,7 @@ import signal
 import logging
 import asyncpg
 from questdb.ingress import Sender, TimestampNanos, IngressError
-from Thermobeacon.sample import Sample
+from sample import Sample
 
 class Publisher():
     

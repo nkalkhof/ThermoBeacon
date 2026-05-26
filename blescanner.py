@@ -15,7 +15,7 @@ from bleak import BleakScanner
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 
-from Thermobeacon.decode import decodeAdData
+from .decode import decodeAdData
 
 class BLEScanner():
 
@@ -61,7 +61,6 @@ class BLEScanner():
     def __callback(self, device: BLEDevice, advData: AdvertisementData):
         self.count += 1
         if self.count > self.MAX_CALLBACKS:
-            #self.logging.debug(f"callback runs wild, forced stop!")
             self.stopEvent.set() # callback invokes chickened out, stop it!
             return
 

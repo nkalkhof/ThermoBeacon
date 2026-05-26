@@ -54,7 +54,7 @@ class Controller():
     '''***************************************************************************
     # accumulate mac addresses, skip already received!
     ***************************************************************************'''
-    async def test01(self, label, mac, data: bytearray) -> bool:
+    async def runExternal(self, label, mac, data: bytearray) -> bool:
         if mac.casefold() not in self.args.beacons.casefold():
             return # disregard non matching mac addresses
 
@@ -80,11 +80,10 @@ class Controller():
         
         self.starttime = time.time()
 
-        self.logging.debug(f"===============> found {len(self.samples)} devices!!!!")
+        self.logging.debug(f"found {len(self.samples)} devices")
         for s in self.samples:
             logging.debug(s.__str__())
 
-        # do the deed
         await self.publish()            
 
         self.logging.debug(f"finished in {time.time() - self.starttime} seconds!")
@@ -104,13 +103,14 @@ class Controller():
     ***************************************************************************'''
     async def scan(self):
         await self.scanner.scan()
+        self.samples.clear()
 
         decoded = self.scanner.getDecoded()
         if not decoded: # empty dict, device not found, omit!
             return
 
         for d in decoded:
-          self.samples.append(self.__buildSample(d["mac"], d))
+            self.__buildSample(d["mac"], d)
             
         for s in self.samples:
             logging.debug(s.__str__())
@@ -121,14 +121,9 @@ class Controller():
     async def publish(self):        
         if len(self.samples) == 0:
             return
-            # todo sample check different!
-            # cycle through EVERY sample and check values!
-            # if new samples > prev, publish also!
-        if self.firstTime == True or self.prevSamples != self.samples:
-                #or compareSamples(self.samples, self.prevSamples):
+        if compareSamples(self.samples, self.prevSamples) is False:
             await Publisher(self.args, self.logging).doPublish(self.samples)
             self.prevSamples = copy.deepcopy(self.samples)
-            self.firstTime == False
         else:
             self.logging.debug(f"publish(): samples identical, omitting publish!")
         self.samples.clear()

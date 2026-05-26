@@ -12,4 +12,4 @@
 from .controller import Controller as Thermo
 from .args import getArgs as Thermoargs
 
-__all__ = ['getArgs', 'test01']
+__all__ = ['getArgs', 'runExternal']

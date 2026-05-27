@@ -54,7 +54,7 @@ class Controller():
     '''***************************************************************************
     # accumulate mac addresses, skip already received!
     ***************************************************************************'''
-    async def runExternal(self, label, mac, data: bytearray) -> bool:
+    def runExternal(self, label, mac, data: bytearray) -> bool:
         if mac.casefold() not in self.args.beacons.casefold():
             return # disregard non matching mac addresses
 
@@ -84,7 +84,7 @@ class Controller():
         for s in self.samples:
             logging.debug(s.__str__())
 
-        await self.publish()            
+        self.publish()            
 
         self.logging.debug(f"finished in {time.time() - self.starttime} seconds!")
         return True
@@ -122,7 +122,7 @@ class Controller():
         if len(self.samples) == 0:
             return
         if compareSamples(self.samples, self.prevSamples) is False:
-            await Publisher(self.args, self.logging).doPublish(self.samples)
+            Publisher(self.args, self.logging).doPublish(self.samples)
             self.prevSamples = copy.deepcopy(self.samples)
         else:
             self.logging.debug(f"publish(): samples identical, omitting publish!")

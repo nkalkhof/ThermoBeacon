@@ -12,7 +12,6 @@ import sys
 import time
 import math
 import asyncio
-import time
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
@@ -20,8 +19,6 @@ from Thermobeacon.args import getArgs
 from Thermobeacon.controller import Controller
 
 from args import getArgs
-
-args = getArgs()     
 
 '''***************************************************************************
 
@@ -61,6 +58,7 @@ signal.signal(signal.SIGQUIT, signal_handler)
 
 ***************************************************************************'''
 async def main():    
+    args = getArgs()     
     __setupLogging(args)             
     controller: Controller = Controller(args = args, logger = logging.getLogger())    
     await controller.connect()
@@ -73,6 +71,6 @@ async def main():
             logging.debug(f"sleeping for: {delta} seconds...")    
             await asyncio.sleep(delta)
         
-if __name__ == "__main__":        
+if __name__ == "__main__":
     asyncio.run(main())
 

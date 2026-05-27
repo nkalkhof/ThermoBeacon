@@ -10,7 +10,6 @@
  ***************************************************************************'''
 import signal
 import logging
-import asyncpg
 from questdb.ingress import Sender, TimestampNanos, IngressError
 from sample import Sample
 
@@ -26,20 +25,21 @@ class Publisher():
     '''***************************************************************************
 
     ***************************************************************************'''
-    async def doPublish(self, samples):
+    def doPublish(self, samples):
         try:
-            rows: Dict = {}
-            for sample in samples:
-                rows[sample.label + "_temp"] = sample.temperature
-                rows[sample.label + "_hum"] = sample.humidity
-
             url = "{0}:{1}".format(self.args.dbhost, self.args.ilpport)
-
-            self.logging.debug(f"doPublish(): publishing sample to {
+            self.logging.debug(f"doPublish(): publishing samples to {
                 url} table {self.args.dbtable}...")               
-
+            now = TimestampNanos.now()
             with Sender.from_conf("http::addr=" + url + ";") as sender:
-                sender.row(self.args.dbtable, columns = rows, at = TimestampNanos.now())
+                for sample in samples:
+                    sender.row(self.args.dbtable, 
+                        columns = {
+                            'label' : sample.label,
+                            'temperature' : sample.temperature,
+                            'humidity'    : sample.humidity
+                            }, 
+                        at = now)       
                 sender.flush()
                 
         except IngressError as e:

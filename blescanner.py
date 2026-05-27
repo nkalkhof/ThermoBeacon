@@ -15,7 +15,7 @@ from bleak import BleakScanner
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 
-from .decode import decodeAdData
+from Thermobeacon.decode import decodeAdData
 
 class BLEScanner():
 
@@ -29,7 +29,7 @@ class BLEScanner():
         self.beacons   = beacons
         self.scantime  = timeout
         self.decoded   = [] 
-        self.count     = math.nan
+        self.numbeacons= len(beacons.split(','))
         self.stopEvent = asyncio.Event()        
         self.scanner   = BleakScanner(detection_callback = self.__callback)
 
@@ -51,19 +51,10 @@ class BLEScanner():
         
         self.logging.debug(f"BLEScanner(): {len(self.decoded)} devices found!")
         
-
-    def getDecoded(self):
-        return self.decoded
-
     '''***************************************************************************
 
     ***************************************************************************'''
     def __callback(self, device: BLEDevice, advData: AdvertisementData):
-        self.count += 1
-        if self.count > self.MAX_CALLBACKS:
-            self.stopEvent.set() # callback invokes chickened out, stop it!
-            return
-
         mac = device.address.lower()        
         if mac not in self.beacons.lower():
             return # disregard non matching mac addresses
@@ -80,4 +71,10 @@ class BLEScanner():
                 self.decoded.append(dict)
                 break
 
+        if len(self.decoded) >= self.numbeacons:
+            self.stopEvent.set() # we're definately done here!
             
+
+           
+    def getDecoded(self):
+        return self.decoded

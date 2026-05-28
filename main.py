@@ -10,35 +10,34 @@
 import signal
 import sys
 import time
-import math
 import asyncio
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
-from Thermobeacon.args import getArgs
-from Thermobeacon.controller import Controller
-
-from args import getArgs
+from thermobeacon.args import getArgs
+from thermobeacon.controller import Controller
 
 '''***************************************************************************
 
 ***************************************************************************'''
-def __setupLogging(args):
+def setupLogging(args, name):
     formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
     fileHandler = TimedRotatingFileHandler(args.logpath, 
             when = 'h', interval = 24, backupCount = 7)
     fileHandler.setFormatter(formatter)    
     consoleHandler = logging.StreamHandler()
     consoleHandler.setFormatter(formatter)
-    logger = logging.getLogger()
+    logger = logging.getLogger(name)
     if args.logger == "file":
         logger.addHandler(fileHandler)
     else:
         logger.addHandler(consoleHandler)    
     logger.setLevel(args.loglevel.upper())
+    logger.propagate = False # keep logs to this module!
     # shut up bleak debug logging flood
     bleak_logger = logging.getLogger("bleak")
     bleak_logger.setLevel(logging.INFO)
+    return logger
 
 
 def signal_handler(signum, frame):
@@ -59,13 +58,13 @@ signal.signal(signal.SIGQUIT, signal_handler)
 ***************************************************************************'''
 async def main():    
     args = getArgs()     
-    __setupLogging(args)             
+    setupLogging(args, None)             
     controller: Controller = Controller(args = args, logger = logging.getLogger())    
-    await controller.connect()
+    controller.connect()
     while(True):
         starttime = time.time()
         await controller.scan()
-        await controller.publish()
+        controller.publish()
         delta = args.interval - (time.time() - starttime)
         if delta > 0:
             logging.debug(f"sleeping for: {delta} seconds...")    

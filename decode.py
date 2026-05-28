@@ -9,8 +9,6 @@
  * source               :
  ***************************************************************************'''
 
-from Thermobeacon.sample import Sample
-
 '''***************************************************************************
 ADVERTISING MESSAGES
 Decode Manufacturer specific data from BLE Advertising message

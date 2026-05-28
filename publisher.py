@@ -11,7 +11,7 @@
 import signal
 import logging
 from questdb.ingress import Sender, TimestampNanos, IngressError
-from sample import Sample
+from thermobeacon.sample import Sample
 
 class Publisher():
     

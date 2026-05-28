@@ -11,14 +11,12 @@
 import asyncio
 import copy
 import time
-import logging
 
-from Thermobeacon.blescanner import BLEScanner
-from Thermobeacon.sample     import Sample
-from Thermobeacon.sample     import compareSamples
-from Thermobeacon.publisher  import Publisher
-from Thermobeacon.decode     import decodeAdData
-
+from thermobeacon.scanner   import BLEScanner
+from thermobeacon.sample    import Sample
+from thermobeacon.sample    import compareSamples
+from thermobeacon.publisher import Publisher
+from thermobeacon.decode    import decodeAdData
 
 class Controller():
     
@@ -32,13 +30,13 @@ class Controller():
         self.scanner: BLEScanner = None
         self.prevSamples = []
         self.samples     = []
-        self.starttime   = time.time()         
+        self.starttime   = time.time()
 
     '''***************************************************************************
 
     ***************************************************************************'''
     def __buildSample(self, mac, decoded: dict) -> Sample:
-          sample: Sample = Sample()
+          sample             = Sample()
           sample.btmac       = mac
           sample.temperature = decoded["temperature"]
           sample.humidity    = decoded["humidity"]
@@ -54,7 +52,7 @@ class Controller():
     '''***************************************************************************
     # accumulate mac addresses, skip already received!
     ***************************************************************************'''
-    def runExternal(self, label, mac, data: bytearray) -> bool:
+    def runExternal(self, device, mac, data: bytearray):
         if mac.casefold() not in self.args.beacons.casefold():
             return # disregard non matching mac addresses
 
@@ -75,25 +73,24 @@ class Controller():
             if decoded is False:
                 return
 
-        if (time.time() - self.starttime) < self.args.scantime:
-            return False
+        if (time.time() - self.starttime) < self.args.interval:
+            return
         
         self.starttime = time.time()
 
         self.logging.debug(f"found {len(self.samples)} devices")
         for s in self.samples:
-            logging.debug(s.__str__())
+            self.logging.debug(s.__str__())
 
         self.publish()            
 
         self.logging.debug(f"finished in {time.time() - self.starttime} seconds!")
-        return True
 
         
     '''***************************************************************************
 
     ***************************************************************************'''
-    async def connect(self):
+    def connect(self):
         self.scanner: BLEScanner = BLEScanner(self.args.beacons, 
         timeout = self.args.scantime, logging = self.logging)
 
@@ -113,12 +110,12 @@ class Controller():
             self.__buildSample(d["mac"], d)
             
         for s in self.samples:
-            logging.debug(s.__str__())
+            self.logging.debug(s.__str__())
 
     '''***************************************************************************
 
     ***************************************************************************'''
-    async def publish(self):        
+    def publish(self):        
         if len(self.samples) == 0:
             return
         if compareSamples(self.samples, self.prevSamples) is False:

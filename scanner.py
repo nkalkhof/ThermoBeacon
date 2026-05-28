@@ -15,7 +15,7 @@ from bleak import BleakScanner
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 
-from Thermobeacon.decode import decodeAdData
+from thermobeacon.decode import decodeAdData
 
 class BLEScanner():
 

@@ -28,8 +28,7 @@ class Publisher():
     def doPublish(self, samples):
         try:
             url = "{0}:{1}".format(self.args.dbhost, self.args.ilpport)
-            self.logging.debug(f"doPublish(): publishing samples to {
-                url} table {self.args.dbtable}...")               
+            self.logging.debug(f"publishing samples to {url} table {self.args.dbtable}...")               
             now = TimestampNanos.now()
             with Sender.from_conf("http::addr=" + url + ";") as sender:
                 for sample in samples:
@@ -43,9 +42,9 @@ class Publisher():
                 sender.flush()
                 
         except IngressError as e:
-            self.logging.error(f"doPublish(): Failed to connect or send data: {e}")
+            self.logging.error(f"failed to connect or send data: {e}")
             pass
 
         except Exception as e:
-            self.logging.error(f"doPublish(): unexpected error: {e}")
+            self.logging.error(f"unexpected error: {e}")
             pass

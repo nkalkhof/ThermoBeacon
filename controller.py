@@ -73,18 +73,14 @@ class Controller():
             if decoded is False:
                 return
 
-        if (time.time() - self.starttime) < self.args.interval:
-            return
-        
-        self.starttime = time.time()
-
-        self.logging.debug(f"found {len(self.samples)} devices")
-        for s in self.samples:
-            self.logging.debug(s.__str__())
-
-        self.publish()            
-
-        self.logging.debug(f"finished in {time.time() - self.starttime} seconds!")
+        delta = time.time() - self.starttime
+        if delta >= self.args.interval:
+            self.logging.debug(f"found {len(self.samples)} devices in "\
+                                f"{delta:.2f} seconds")
+            for s in self.samples:
+                self.logging.debug(s.__str__())
+            self.publish()            
+            self.starttime = time.time()
 
         
     '''***************************************************************************
@@ -122,6 +118,6 @@ class Controller():
             Publisher(self.args, self.logging).doPublish(self.samples)
             self.prevSamples = copy.deepcopy(self.samples)
         else:
-            self.logging.debug(f"publish(): samples identical, omitting publish!")
+            self.logging.debug(f"samples identical, omitting publish!")
         self.samples.clear()
  

@@ -23,7 +23,7 @@ from thermobeacon.controller import Controller
 def setupLogging(args, name):
     formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
     fileHandler = TimedRotatingFileHandler(args.logpath, 
-            when = 'h', interval = 24, backupCount = 7)
+            when = 'h', interval = 24, backupCount = 2)
     fileHandler.setFormatter(formatter)    
     consoleHandler = logging.StreamHandler()
     consoleHandler.setFormatter(formatter)

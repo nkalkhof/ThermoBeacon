@@ -52,7 +52,7 @@ class Controller():
     '''***************************************************************************
     # accumulate mac addresses, skip already received!
     ***************************************************************************'''
-    def runExternal(self, device, mac, data: bytearray):
+    def run_external(self, device, mac, data: bytearray):
         if mac.casefold() not in self.args.beacons.casefold():
             return # disregard non matching mac addresses
 
@@ -75,6 +75,8 @@ class Controller():
 
         delta = time.time() - self.starttime
         if delta >= self.args.interval:
+            self.logging.debug(f"======================> firing up thermobeacon query "\
+                               f"<======================") 
             self.logging.debug(f"found {len(self.samples)} devices in "\
                                 f"{delta:.2f} seconds")
             for s in self.samples:

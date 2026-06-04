@@ -40,7 +40,7 @@ class Publisher():
                             }, 
                         at = now)       
                 sender.flush()
-                
+                self.logging.debug(f"done!")
         except IngressError as e:
             self.logging.error(f"failed to connect or send data: {e}")
             pass

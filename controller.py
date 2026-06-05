@@ -52,7 +52,7 @@ class Controller():
     '''***************************************************************************
     # accumulate mac addresses, skip already received!
     ***************************************************************************'''
-    def run_external(self, device, mac, data: bytearray):
+    async def run_external(self, device, mac, data: bytearray):
         if mac.casefold() not in self.args.beacons.casefold():
             return # disregard non matching mac addresses
 

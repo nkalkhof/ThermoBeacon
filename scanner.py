@@ -39,7 +39,7 @@ class BLEScanner():
     async def scan(self):
         self.count = 0
         self.decoded.clear() # clear list of dictionaries
-        self.logging.debug(f"BLEScanner(): scanning for devices...")
+        self.logging.debug(f"scanning for devices...")
         self.stopEvent.clear() # we need to reset async event here!
         await self.scanner.start()
         await asyncio.sleep(self.scantime)
@@ -49,7 +49,7 @@ class BLEScanner():
             await self.scanner.stop()
 
         
-        self.logging.debug(f"BLEScanner(): {len(self.decoded)} devices found!")
+        self.logging.debug(f"{len(self.decoded)} devices found!")
         
     '''***************************************************************************
 

@@ -42,13 +42,11 @@ def compareSamples(samples, prevsamples) -> bool:
     if prevsamples is None or len(prevsamples) == 0: 
         return False
 
-    if len(prevsamples) < len(samples): 
-        return False
-
     for sample in samples:
         for prevsample in prevsamples:
             if len(sample.btmac) != 0 and sample.btmac == prevsample.btmac:
                 if round(sample.temperature, 2) != round(prevsample.temperature, 2) and \
                    round(sample.humidity, 2)    != round(prevsample.humidity, 2):
                     return False
+                break
     return True
